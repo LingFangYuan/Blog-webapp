@@ -133,7 +133,7 @@ class BooleanField(Field):
         布尔类型字段，数据类型默认为False
     """
 
-    def __init__(self, name=None, default=None):
+    def __init__(self, name=None, default=False):
         super().__init__(name, 'boolean', False, default)
 
 
@@ -168,7 +168,7 @@ class ModelMetaclass(type):
             attrs.pop(k)
 
         escaped_fields = list(map(lambda f: '`%s`' %
-                                  mappings.get(f).name or f, fields))
+                                  (mappings.get(f).name or f), fields))
         pk = mappings.get(primaryKey).name or primaryKey
         attrs['__mappings__'] = mappings  # 保存属性到列的映射关系
         attrs['__table__'] = tableName  # 保存表名
@@ -219,7 +219,7 @@ class Model(dict, metaclass=ModelMetaclass):
         """
         value = getattr(self, key, None)
         if value is None:
-            field = self.__mapping__[key]
+            field = self.__mappings__[key]
             if field.default is not None:
                 value = field.default() if callable(field.default) else field.default
                 logging.debug('using default value for %s: %s' %
@@ -298,22 +298,3 @@ class Model(dict, metaclass=ModelMetaclass):
         if rows != 1:
             logging.warn(
                 'failed to remove by primary key: affected rows: %s' % rows)
-
-
-class User(Model):
-    __table__ = 'user'
-
-    id = IntegerField('id', primary_key=True)
-    name = StringField('name')
-
-
-async def fun(loop):
-    await create_pool(loop, user='root', password='111111', db='test')
-    n = await User.find(pk=3)
-    await n.remove()
-
-
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(fun(loop))
-    loop.run_forever()
