@@ -50,7 +50,7 @@ async def select(sql, args, size=None):
 
 
 async def execute(sql, args, autocommit=True):
-    log(sql)
+    log(sql, args)
     async with __pool.acquire() as conn:
         if not autocommit:
             await conn.begin()
@@ -177,8 +177,8 @@ class ModelMetaclass(type):
         # 构造默认的SELECT，INSERT，UPDATE和DELETE语句
         attrs['__select__'] = 'select `%s`, %s from `%s`' % (
             pk, ','.join(escaped_fields), tableName)
-        attrs['__insert__'] = 'insert into `%s` (`%s`, %s) values(%s)' % (
-            tableName, pk, ','.join(escaped_fields), create_args_string(len(fields) + 1))
+        attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values(%s)' % (
+            tableName, ','.join(escaped_fields), pk, create_args_string(len(fields) + 1))
         attrs['__update__'] = 'update `%s` set %s where `%s` = ?' % (
             tableName, ','.join(map(lambda f: '%s=?' % f, escaped_fields)), pk)
         attrs['__delete__'] = 'delete from `%s` where `%s` = ?' % (
@@ -277,7 +277,7 @@ class Model(dict, metaclass=ModelMetaclass):
     async def save(self):
         ' 插入数据到数据库'
         args = list(map(self.getValueOrDefault, self.__fields__))
-        args.insert(0, self.getValueOrDefault(self.__primary_key__))
+        args.append(self.getValueOrDefault(self.__primary_key__))
         rows = await execute(self.__insert__, args)
         if rows != 1:
             logging.warn('faild to insert record: affected rows: %s' % rows)
