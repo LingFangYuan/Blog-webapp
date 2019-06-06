@@ -46,7 +46,7 @@ async def logger_factory(app, handler):
 
 async def response_factory(app, handler):
     async def response(request):
-        logging.info('REsponse handler...')
+        logging.info('Response handler...')
         r = await handler(request)
         if isinstance(r, web.StreamResponse):
             return r

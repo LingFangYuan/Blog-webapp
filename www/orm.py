@@ -5,7 +5,7 @@ import aiomysql
 
 def log(sql, args=()):
     logging.info('''SQL: %s
-        args: ''' % sql, args)
+        args: %s''' % (sql, str(args)))
 
 
 async def create_pool(loop, **kw):
